@@ -5,43 +5,57 @@
 
 <meta charset="UTF-8">
 
-<title>TM Camera AI</title>
+<title>Teachable Machine AI</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<!-- TensorFlow.js -->
+<script defer
+src="https://unpkg.com/@tensorflow/tfjs@4.10.0/dist/tf.min.js">
+</script>
 
-<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image"></script>
+<!-- Teachable Machine -->
+<script defer
+src="https://unpkg.com/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js">
+</script>
 
 <style>
 
 body{
     margin:0;
+    padding:0;
     background:black;
     color:white;
     text-align:center;
     font-family:sans-serif;
 }
 
+h1{
+    margin-top:20px;
+}
+
 video{
     width:95%;
     max-width:500px;
-    margin-top:20px;
     border-radius:20px;
+    margin-top:20px;
 }
 
 #label{
     font-size:40px;
-    margin-top:20px;
     font-weight:bold;
+    margin-top:20px;
 }
 
 #prob{
     font-size:25px;
+    margin-top:10px;
 }
 
 button{
-    font-size:30px;
-    padding:15px;
-    margin:20px;
+    font-size:25px;
+    padding:15px 25px;
+    margin-top:25px;
+    border:none;
+    border-radius:15px;
 }
 
 </style>
@@ -52,11 +66,19 @@ button{
 
 <h1>Teachable Machine AI</h1>
 
-<video id="video" autoplay playsinline></video>
+<video
+    id="video"
+    autoplay
+    playsinline
+    muted>
+</video>
 
-<div id="label">WAIT...</div>
+<div id="label">
+WAIT...
+</div>
 
-<div id="prob"></div>
+<div id="prob">
+</div>
 
 <button onclick="startAI()">
 START AI
@@ -64,17 +86,33 @@ START AI
 
 <script>
 
+// =========================
+// Teachable Machine 모델 주소
+// 반드시 마지막 "/" 포함
+// =========================
+
 const URL =
 "https://teachablemachine.withgoogle.com/models/WsG_WSypZ/";
+
+// =========================
 
 let model;
 
 let video;
 
+// =========================
+// AI 시작
+// =========================
+
 async function startAI(){
 
     try{
 
+        AppInventor.setWebViewString(
+            "LOADING MODEL..."
+        );
+
+        // 모델 로드
         model = await tmImage.load(
             URL + "model.json",
             URL + "metadata.json"
@@ -84,21 +122,40 @@ async function startAI(){
             "MODEL LOADED"
         );
 
+        // 카메라 접근
         const stream =
             await navigator.mediaDevices.getUserMedia({
-                video:true,
+                video:{
+                    facingMode:"environment"
+                },
                 audio:false
             });
 
+        // video 연결
         video =
             document.getElementById("video");
 
         video.srcObject = stream;
 
+        // 영상 준비 대기
+        await video.play();
+
+        AppInventor.setWebViewString(
+            "CAMERA START"
+        );
+
+        // 예측 시작
         predictLoop();
+
     }
 
     catch(err){
+
+        document.getElementById("label").innerHTML =
+            "ERROR";
+
+        document.getElementById("prob").innerHTML =
+            err;
 
         AppInventor.setWebViewString(
             "ERROR : " + err
@@ -106,8 +163,13 @@ async function startAI(){
     }
 }
 
+// =========================
+// 실시간 예측 루프
+// =========================
+
 async function predictLoop(){
 
+    // 예측
     const prediction =
         await model.predict(video);
 
@@ -115,6 +177,7 @@ async function predictLoop(){
 
     let bestProb = 0;
 
+    // 최고 확률 찾기
     for(let i=0; i<prediction.length; i++){
 
         if(prediction[i].probability > bestProb){
@@ -127,18 +190,24 @@ async function predictLoop(){
         }
     }
 
+    // HTML 출력
     document.getElementById("label").innerHTML =
         bestClass;
 
     document.getElementById("prob").innerHTML =
-        (bestProb * 100).toFixed(1) + "%";
+        (bestProb * 100).toFixed(1)
+        + "%";
 
+    // 앱인벤터 전달
     AppInventor.setWebViewString(
         bestClass + "," +
         (bestProb * 100).toFixed(1)
     );
 
-    requestAnimationFrame(predictLoop);
+    // 반복
+    requestAnimationFrame(
+        predictLoop
+    );
 }
 
 </script>
