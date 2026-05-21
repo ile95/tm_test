@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>Camera Test</title>
+
+<style>
+
+body{
+    text-align:center;
+    background:#222;
+    color:white;
+}
+
+video{
+    width:90%;
+    max-width:500px;
+    border-radius:20px;
+}
+
+button{
+    font-size:24px;
+    padding:15px;
+    margin:20px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Camera Test</h1>
+
+<video id="video" autoplay playsinline></video>
+
+<br>
+
+<button onclick="startCamera()">
+START CAMERA
+</button>
+
+<script>
+
+async function startCamera(){
+
+    try{
+
+        const stream =
+            await navigator.mediaDevices.getUserMedia({
+                video:true,
+                audio:false
+            });
+
+        const video =
+            document.getElementById("video");
+
+        video.srcObject = stream;
+
+        AppInventor.setWebViewString(
+            "CAMERA SUCCESS"
+        );
+
+    }
+    catch(err){
+
+        AppInventor.setWebViewString(
+            "ERROR : " + err
+        );
+    }
+}
+
+</script>
+
+</body>
+</html>
