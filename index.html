@@ -5,24 +5,41 @@
 
 <meta charset="UTF-8">
 
-<title>Camera Test</title>
+<title>TM Camera AI</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image"></script>
 
 <style>
 
 body{
-    text-align:center;
-    background:#222;
+    margin:0;
+    background:black;
     color:white;
+    text-align:center;
+    font-family:sans-serif;
 }
 
 video{
-    width:90%;
+    width:95%;
     max-width:500px;
+    margin-top:20px;
     border-radius:20px;
 }
 
+#label{
+    font-size:40px;
+    margin-top:20px;
+    font-weight:bold;
+}
+
+#prob{
+    font-size:25px;
+}
+
 button{
-    font-size:24px;
+    font-size:30px;
     padding:15px;
     margin:20px;
 }
@@ -33,21 +50,39 @@ button{
 
 <body>
 
-<h1>Camera Test</h1>
+<h1>Teachable Machine AI</h1>
 
 <video id="video" autoplay playsinline></video>
 
-<br>
+<div id="label">WAIT...</div>
 
-<button onclick="startCamera()">
-START CAMERA
+<div id="prob"></div>
+
+<button onclick="startAI()">
+START AI
 </button>
 
 <script>
 
-async function startCamera(){
+const URL =
+"https://teachablemachine.withgoogle.com/models/WsG_WSypZ/";
+
+let model;
+
+let video;
+
+async function startAI(){
 
     try{
+
+        model = await tmImage.load(
+            URL + "model.json",
+            URL + "metadata.json"
+        );
+
+        AppInventor.setWebViewString(
+            "MODEL LOADED"
+        );
 
         const stream =
             await navigator.mediaDevices.getUserMedia({
@@ -55,16 +90,14 @@ async function startCamera(){
                 audio:false
             });
 
-        const video =
+        video =
             document.getElementById("video");
 
         video.srcObject = stream;
 
-        AppInventor.setWebViewString(
-            "CAMERA SUCCESS"
-        );
-
+        predictLoop();
     }
+
     catch(err){
 
         AppInventor.setWebViewString(
@@ -73,7 +106,43 @@ async function startCamera(){
     }
 }
 
+async function predictLoop(){
+
+    const prediction =
+        await model.predict(video);
+
+    let bestClass = "";
+
+    let bestProb = 0;
+
+    for(let i=0; i<prediction.length; i++){
+
+        if(prediction[i].probability > bestProb){
+
+            bestProb =
+                prediction[i].probability;
+
+            bestClass =
+                prediction[i].className;
+        }
+    }
+
+    document.getElementById("label").innerHTML =
+        bestClass;
+
+    document.getElementById("prob").innerHTML =
+        (bestProb * 100).toFixed(1) + "%";
+
+    AppInventor.setWebViewString(
+        bestClass + "," +
+        (bestProb * 100).toFixed(1)
+    );
+
+    requestAnimationFrame(predictLoop);
+}
+
 </script>
 
 </body>
+
 </html>
